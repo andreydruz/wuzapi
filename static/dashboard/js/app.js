@@ -183,15 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
     return false;
   });
 
-  const pairPhoneInput = document.getElementById('pairphoneinput');
-  pairPhoneInput.addEventListener('keypress', function(e) {
+  document.getElementById('pairphoneinput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
       const phone = pairPhoneInput.value.trim();
       if (phone) {
         connect().then((data) => {
-          // Handle both success and "already connected" cases
-          const isAlreadyConnected = data.error && (data.error === "already connected" || data.error.includes("already connected"));
-          if(data.success==true || isAlreadyConnected) {
+          if(data.success==true) {
             pairPhone(phone)
               .then((data) => {
                 document.getElementById('pairHelp').classList.add('hidden');;
@@ -208,9 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('pairInfo').innerHTML = "Problem getting pairing code";
                 console.error('Pairing error:', error);
               });
-          } else {
-            document.getElementById('pairInfo').innerHTML = `Connection error: ${data.error || 'Unknown error'}`;
-            console.error('Connection error:', data);
           }
       });
       }
@@ -928,12 +922,6 @@ async function connect(token='') {
     body: JSON.stringify({Subscribe: ['All'], Immediate: true})
   });
   data = await res.json();
-  // If already connected, treat it as success
-  if (!data.success && data.error && (data.error === "already connected" || data.error.includes("already connected"))) {
-    data.success = true;
-    data.error = null; // Clear error to prevent confusion
-    console.log("Already connected, treating as success and continuing...");
-  }
   updateInterval=1000; // Decrease interval to react quicker to QR scan
   return data;
 }
@@ -1119,32 +1107,6 @@ async function statusRequest() {
     data = await res.json();
     return data;
   }
-}
-
-function checkStatus() {
-  console.log("checkStatus");
-  statusRequest().then((status) => {
-    if(status && status.success==true) {
-      if(status.data && status.data.loggedIn === true) {
-        if(scanInterval) {
-          clearInterval(scanInterval);
-        }
-        document.getElementById('pairInfo').innerHTML = "Connected!";
-        $('#modalLoginWithCode').modal('hide');
-        // Refresh instance data
-        updateUser();
-      }
-    } else {
-      if(scanInterval) {
-        clearInterval(scanInterval);
-      }
-    }
-  }).catch((error) => {
-    console.error('Status check error:', error);
-    if(scanInterval) {
-      clearInterval(scanInterval);
-    }
-  });
 }
 
 function parseURLParams(url) {
